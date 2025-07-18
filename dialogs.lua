@@ -26,13 +26,39 @@ local function strip_markdown(text)
     text = text:gsub("^#+ ", "")      -- For a heading at the start of the text
 
     -- Remove markdown for inline code (`code`)
-    text = text:gsub("`([^"]+)`", "%1")
+    text = text:gsub("`([^`]+)`", "%1")
 
     -- Remove markdown emphasis (bold, italics)
-    -- Note: The '%' character escapes the '*' (a magic character in Lua patterns).
+    -- Note: The '%*' escapes the '*' (a magic character in Lua patterns).
     -- We replace bold (**text**) first, then italics (*text*).
-    text = text:gsub("%%%*%%%*(.-)%%%*%%%*", "%1") -- Bold: **text** -> text
-    text = text:gsub("%%%*(.-)%%%*", "%1")     -- Italics: *text* -> text
+    text = text:gsub("%*%*(.-)%*%*", "%1") -- Bold: **text** -> text
+    text = text:gsub("%*(.-)%*", "%1")     -- Italics: *text* -> text
+    
+    -- Remove markdown emphasis with underscores
+    text = text:gsub("__(.-)__", "%1")     -- Bold: __text__ -> text
+    text = text:gsub("_(.-)_", "%1")       -- Italics: _text_ -> text
+    
+    -- Remove markdown links [text](url)
+    text = text:gsub("%[(.-)%]%(.-%)", "%1")
+    
+    -- Remove markdown blockquotes
+    text = text:gsub("\n> ", "\n")
+    text = text:gsub("^> ", "")
+    
+    -- Remove markdown lists
+    text = text:gsub("\n%d+%. ", "\n")  -- Ordered lists: 1. item
+    text = text:gsub("^%d+%. ", "")     -- Ordered list at start
+    text = text:gsub("\n%- ", "\n")     -- Unordered lists: - item
+    text = text:gsub("^%- ", "")        -- Unordered list at start
+    text = text:gsub("\n%* ", "\n")     -- Unordered lists: * item
+    text = text:gsub("^%* ", "")        -- Unordered list at start
+    
+    -- Remove markdown horizontal rules
+    text = text:gsub("\n%-%-%-+\n", "\n\n") -- ---
+    text = text:gsub("\n%*%*%*+\n", "\n\n") -- ***
+    
+    -- Remove markdown code blocks
+    text = text:gsub("```[^\n]*\n(.-)```", "%1")
 
     return text
 end
