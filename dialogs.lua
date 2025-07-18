@@ -16,22 +16,8 @@ else
   print("configuration.lua not found, skipping...")
 end
 
--- Per user feedback, this function has been simplified to only handle
--- the most common markdown characters (# and *) to avoid syntax errors.
-local function strip_markdown(text)
-    if not text then return "" end
-
-    -- Remove one or more '#' characters from the beginning of a line.
-    text = text:gsub("\n#+ ", "\n") -- For lines that are not the first line
-    text = text:gsub("^#+ ", "")      -- For the very first line
-
-    -- Remove asterisks used for bold or italics.
-    -- Important: remove double asterisks first, then single ones.
-    text = text:gsub("%%*%%*(.-)%%*%%*", "%1") -- **text** -> text
-    text = text:gsub("%%*(.-)%%*", "%1")     -- *text* -> text
-
-    return text
-end
+-- Strips basic markdown formatting from text.This function handles headings, bold, italics, and inline code.local function strip_markdown(text)    if not text then return "" end    -- Remove markdown headings (e.g., "### Title")    text = text:gsub("\n#+ ", "\n") -- For headings on new lines    text = text:gsub("^#+ ", "")      -- For a heading at the start of the text    -- Remove markdown emphasis (bold, italics)    -- Note: The '%' character escapes the '*' (a magic character in Lua patterns).    -- We replace bold (**text**) first, then italics (*text*).    text = text:gsub("%*%*(.-)%*%*", "%1") -- Bold: **text** -> text    text = text:gsub("%*(.-)%*", "%1")     -- Italics: *text* -> text    -- Remove markdown for inline code (`code`)    text = text:gsub("`([^
+`]+)`", "%1")    return textend
 
 
 local function translateText(text, target_language)
