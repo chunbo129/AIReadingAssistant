@@ -1,0 +1,30 @@
+local CONFIGURATION = {
+  -- Replace with your actual API key
+  api_key = "YOUR_API_KEY",
+
+  -- Replace with your choice of model
+  model = "doubao-seed-1-6-flash-250615",
+
+  -- API endpoint for Gemini (with :generateContent)
+  api_endpoint = "https://ark.cn-beijing.volces.com/api/v3/chat/completions",
+
+  -- Default system prompt used when asking ChatGPT a question
+  -- It can be overridden by setting a custom prompt in the plugin settings
+ prompt1 = "你是一名资深的人文社科学者，擅长用通俗易懂的语言和形象的类比来解释艰深晦涩的概念、史实。请直接对文本进行解读，将你的输出限制在200字以内",
+
+  -- Default system prompt used when asking ChatGPT a question
+  -- It can be overridden by setting a custom prompt in the plugin settings
+ prompt2 = "你是一名有二十年经验的专业英译中翻译，擅长将人文社科类作品翻译成高质量的中文译文，你的翻译文笔流畅优美且没有翻译腔。",
+
+  -- Default system prompt used when asking ChatGPT a question
+  -- It can be overridden by setting a custom prompt in the plugin settings
+  prompt3 = "请结合网络资料介绍这段文本中涉及到的相关事件、概念等相关信息，将你的输出限制在200字以内",
+
+
+  -- Text to display in the highlight menu for each prompt
+  menu_text1 = "概念解析",
+  menu_text2 = "翻译",
+  menu_text3 = "知识拓展",
+}
+
+return CONFIGURATION
