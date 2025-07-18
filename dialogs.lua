@@ -16,7 +16,26 @@ else
   print("configuration.lua not found, skipping...")
 end
 
--- Strips basic markdown formatting from text.This function handles headings, bold, italics, and inline code.local function strip_markdown(text)    if not text then return "" end    -- Remove markdown headings (e.g., "### Title")    text = text:gsub("\n#+ ", "\n") -- For headings on new lines    text = text:gsub("^#+ ", "")      -- For a heading at the start of the text    -- Remove markdown for inline code (`code`)    text = text:gsub("`([^"]+)`", "%1")    -- Remove markdown emphasis (bold, italics)    -- Note: The '%' character escapes the '*' (a magic character in Lua patterns).    -- We replace bold (**text**) first, then italics (*text*).    text = text:gsub("%*%*(.-)%*%*", "%1") -- Bold: **text** -> text    text = text:gsub("%*(.-)%*", "%1")     -- Italics: *text* -> text    return textend
+-- Strips basic markdown formatting from text.
+-- This function handles headings, bold, italics, and inline code.
+local function strip_markdown(text)
+    if not text then return "" end
+
+    -- Remove markdown headings (e.g., "### Title")
+    text = text:gsub("\n#+ ", "\n") -- For headings on new lines
+    text = text:gsub("^#+ ", "")      -- For a heading at the start of the text
+
+    -- Remove markdown for inline code (`code`)
+    text = text:gsub("`([^"]+)`", "%1")
+
+    -- Remove markdown emphasis (bold, italics)
+    -- Note: The '%' character escapes the '*' (a magic character in Lua patterns).
+    -- We replace bold (**text**) first, then italics (*text*).
+    text = text:gsub("%%%*%%%*(.-)%%%*%%%*", "%1") -- Bold: **text** -> text
+    text = text:gsub("%%%*(.-)%%%*", "%1")     -- Italics: *text* -> text
+
+    return text
+end
 
 
 local function translateText(text, target_language)
