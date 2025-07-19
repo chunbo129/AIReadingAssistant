@@ -1,133 +1,79 @@
-# AskGPT KOReader 插件
+# ChatGPT KOReader Plugin (enhanced)
 
-本插件允许您在 KOReader 中集成多种大语言模型（LLM）服务，例如 OpenAI (ChatGPT), Google (Gemini), 火山引擎 (豆包) 等。
+This plugin allows you to integrate various LLM services (OpenAI, Google Gemini, etc.) with KOReader.
 
----
+## Features
 
-# AskGPT KOReader Plugin
+- Three predefined system prompts for quick access
+- Custom prompt input for flexible interactions
+- Save AI responses directly as notes for highlighted text
+- Configure custom system prompts for different contexts
+- Support for multiple LLM providers (OpenAI, Google Gemini)
+- Translate highlighted text to a specified language (if enabled in configuration)
 
-This plugin allows you to integrate various Large Language Model (LLM) services with KOReader, such as OpenAI (ChatGPT), Google (Gemini), Volcengine (Doubao), etc.
+## Installation
 
-## 功能 | Features
+1. Make sure you have KOReader installed on your device.
+2. Clone/Download this repo, upzip it and rename the folder "askgpt.koplugin".
+3. Copy the `askgpt.koplugin` folder to your KOReader plugins directory (`koreader/plugins/`).
+4. Restart KOReader.
+5. Configuration setup: use your favorite text editor to open the configuration.lua file and configure:
+   - API endpoint (OpenAI or Gemini)
+   - API key
+   - Model name
+   - Custom prompts (prompt1, prompt2, prompt3)
 
-- **多服务商支持**: 支持 OpenAI、Google Gemini、火山引擎以及其他兼容 OpenAI API 的服务。
-- **高度自定义**: 提供三个可完全自定义的快捷指令，并可自定义菜单名称。
-- **灵活提问**: 支持在选中文字的基础上进行临时的自定义提问。
-- **保存为笔记**: 可以将模型的返回结果直接保存为 KOReader 笔记。
-- **连续对话**: 支持在当前会话中进行连续追问。
+### Configuration Examples
 
----
-
-- **Multi-Provider Support**: Supports OpenAI, Google Gemini, Volcengine, and other OpenAI API-compatible services.
-- **Highly Customizable**: Offers three fully customizable quick prompts with custom menu labels.
-- **Flexible Interaction**: Allows for custom questions based on highlighted text.
-- **Save as Note**: AI responses can be saved directly as KOReader notes.
-- **Conversational Context**: Supports follow-up questions within the same session.
-
-## 安装 | Installation
-
-1.  下载本项目。
-2.  将文件夹解压并重命名为 `askgpt.koplugin`。
-3.  将 `askgpt.koplugin` 文件夹复制到 KOReader 的插件目录 (`koreader/plugins/`)。
-4.  重启 KOReader。
-
----
-
-1.  Download this project.
-2.  Unzip and rename the folder to `askgpt.koplugin`.
-3.  Copy the `askgpt.koplugin` folder to your KOReader plugins directory (`koreader/plugins/`).
-4.  Restart KOReader.
-
-## 配置 | Configuration
-
-插件需要配置后才能使用。请按照以下步骤操作：
-
-1.  在 `askgpt.koplugin` 文件夹中，将 `configuration.lua.sample` 文件复制并重命名为 `configuration.lua`。
-2.  使用文本编辑器打开 `configuration.lua` 文件并填入您的配置。
-
----
-
-The plugin requires configuration before use. Please follow these steps:
-
-1.  Inside the `askgpt.koplugin` folder, copy and rename `configuration.lua.sample` to `configuration.lua`.
-2.  Open `configuration.lua` with a text editor and fill in your configuration details.
-
-### 配置文件详解 | Configuration Details
-
-- `api_key`: **必需**。您的 API 密钥。
-- `model`: **必需**。您想使用的模型名称。
-- `api_endpoint`: **必需**。服务商提供的 API 地址。
-- `prompt1`, `prompt2`, `prompt3`: **必需**。三个快捷指令的系统提示词 (System Prompt)。
-- `menu_text1`, `menu_text2`, `menu_text3`: **必需**。三个快捷指令在菜单中显示的名称。
-
----
-
-- `api_key`: **Required**. Your API key.
-- `model`: **Required**. The name of the model you want to use.
-- `api_endpoint`: **Required**. The API endpoint URL provided by the service.
-- `prompt1`, `prompt2`, `prompt3`: **Required**. The system prompts for the three quick actions.
-- `menu_text1`, `menu_text2`, `menu_text3`: **Required**. The names for the three quick actions that appear in the menu.
-
-### 配置示例 | Configuration Examples
-
-#### OpenAI
-
+For OpenAI:
 ```lua
-CONFIGURATION = {
-  api_key = "sk-...", -- 你的 OpenAI API Key
-  model = "gpt-4o-mini",
-  api_endpoint = "https://api.openai.com/v1/chat/completions",
-  
-  prompt1 = "请将选中的英文翻译成流畅、优美的中文。",
-  menu_text1 = "翻译",
-  -- ... 其他 prompt 配置
-}
+api_endpoint = "https://api.openai.com/v1/chat/completions"
+model = "gpt-3.5-turbo"
 ```
 
-#### Google Gemini
-
-**注意**: Gemini 的 `api_endpoint` 地址以 `:generateContent` 结尾。
-
+For Google Gemini:
 ```lua
-CONFIGURATION = {
-  api_key = "AIza...", -- 你的 Gemini API Key
-  model = "gemini-1.5-flash-latest", -- 此处的模型名称仅供参考，不会被发送
-  api_endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent",
-  
-  prompt1 = "请用通俗易懂的语言解释选中的概念。",
-  menu_text1 = "解释概念",
-  -- ... 其他 prompt 配置
-}
+api_endpoint = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent"
+model = "gemini-2.0-flash-exp"
 ```
 
-#### 火山引擎 (豆包) | Volcengine (Doubao)
+## Usage
 
-火山引擎的 API 与 OpenAI 兼容。
+1. Highlight text in a document.
+2. Tap the "..." icon in the selection toolbar.
+3. Choose from these options:
+   - **Prompt 1**: Use your first predefined prompt (e.g., "translate to Spanish")
+   - **Prompt 2**: Use your second predefined prompt (e.g., "translate to Chinese")
+   - **Prompt 3**: Use your third predefined prompt (e.g., "explain in detail")
+   - **Ask AI**: Open a dialog to enter your own custom prompt
 
-```lua
-CONFIGURATION = {
-  api_key = "your_volcengine_api_key", -- 你的火山引擎 API Key
-  model = "doubao-pro-4k",
-  api_endpoint = "https://ark.cn-beijing.volces.com/api/v3/chat/completions",
-  
-  prompt1 = "你是一名资深学者，请解读选中的文本，输出限制在200字以内。",
-  menu_text1 = "文本解读",
-  -- ... 其他 prompt 配置
-}
-```
+### Using Predefined Prompts (1, 2, 3)
+- Simply tap the prompt button and the AI will process your highlighted text according to the predefined instruction in configuration.lua
+- The response will appear in a viewer where you can:
+  - Read the full conversation
+  - Save the response as a note for the highlighted text
+  - Ask follow-up questions
 
-## 使用 | Usage
+### Using Custom Prompts (Ask AI)
+1. Tap "Ask AI" in the menu
+2. Type your custom prompt/question about the highlighted text
+3. Tap "Ask" to get the response
+4. The response will show in a viewer where you can:
+   - Read the full conversation history
+   - Save the response as a note for the highlighted text
+   - Ask follow-up questions
 
-1.  在文档中长按选中一段文字。
-2.  在弹出的菜单中，选择您在配置文件中设置的快捷指令 (例如 "翻译", "文本解读" 等)，或选择 **"Ask AI"** 进行自定义提问。
-3.  模型返回的结果将显示在新的窗口中。您可以阅读、追问，或点击 **"Save as note"** 将其保存为笔记。
+### Saving Responses as Notes
+- When viewing an AI response, tap "Save as note" to save it as a note for the highlighted text
+- The note will be automatically saved and the viewer will close
+- You can view saved notes using KOReader's standard note viewing features
 
----
+### Tips
+- You can maintain a conversation thread with follow-up questions
+- The AI considers the document's context (title and author) when responding
+- Error messages will help you identify any configuration or connection issues
+- Notes are saved directly to the document, making them easily accessible for future reference
 
-1.  Long-press to highlight text in a document.
-2.  In the popup menu, select one of your configured quick prompts (e.g., "Translate," "Explain Concept") or choose **"Ask AI"** for a custom question.
-3.  The response will appear in a new window. You can read it, ask follow-up questions, or tap **"Save as note"** to save it.
+## License
 
-## 许可 | License
-
-[MIT License](LICENSE)
+This plugin is released under the MIT License. See the `LICENSE` file for more information.

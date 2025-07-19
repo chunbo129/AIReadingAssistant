@@ -11,6 +11,15 @@ local showChatGPTDialog = require("dialogs")
 local UpdateChecker = require("update_checker")
 local queryChatGPT = require("gpt_query")
 
+-- Helper function to normalize whitespace in AI responses
+local function normalize_whitespace(text)
+  if not text then return "" end
+  -- Replace tabs with spaces, then multiple spaces with a single space
+  text = text:gsub("\t", " "):gsub(" +", " ")
+  -- Trim leading/trailing whitespace
+  return text:match("^%s*(.-)%s*$")
+end
+
 local AskGPT = InputContainer:new {
   name = "askgpt",
   is_doc_only = true,
@@ -94,11 +103,11 @@ function AskGPT:handlePrompt(prompt_number, _reader_highlight_instance)
     end
     local system_prompt
     if prompt_number == 1 then
-      system_prompt = CONFIGURATION and CONFIGURATION.prompt1 or "The following is a conversation with an AI assistant. The assistant is helpful, creative, clever, and very friendly. Answer as concisely as possible."
+      system_prompt = (CONFIGURATION and CONFIGURATION.prompt1 or "The following is a conversation with an AI assistant. The assistant is helpful, creative, clever, and very friendly. Answer as concisely as possible.") .. "\n\n请返回纯文本，不要包含markdown格式符号"
     elseif prompt_number == 2 then
-      system_prompt = CONFIGURATION and CONFIGURATION.prompt2 or "The following is a conversation with an AI assistant. The assistant is helpful, creative, clever, and very friendly. Answer as concisely as possible."
+      system_prompt = (CONFIGURATION and CONFIGURATION.prompt2 or "The following is a conversation with an AI assistant. The assistant is helpful, creative, clever, and very friendly. Answer as concisely as possible.") .. "\n\n请返回纯文本，不要包含markdown格式符号"
     elseif prompt_number == 3 then
-      system_prompt = CONFIGURATION and CONFIGURATION.prompt3 or "The following is a conversation with an AI assistant. The assistant is helpful, creative, clever, and very friendly. Answer as concisely as possible."
+      system_prompt = (CONFIGURATION and CONFIGURATION.prompt3 or "The following is a conversation with an AI assistant. The assistant is helpful, creative, clever, and very friendly. Answer as concisely as possible.") .. "\n\n请返回纯文本，不要包含markdown格式符号"
     end
 
     local highlightedText = _reader_highlight_instance.selected_text.text
@@ -109,49 +118,51 @@ function AskGPT:handlePrompt(prompt_number, _reader_highlight_instance)
 
     local answer, error_msg
     success, error_msg = pcall(function()
-      answer = queryChatGPT(message_history)
+      return queryChatGPT(message_history)
     end)
 
-    if success and answer then
+    if success and error_msg then
+      answer = normalize_whitespace(error_msg)
       table.insert(message_history, { role = "assistant", content = answer })
 
       local result_text = ""
       for i = 1, #message_history do
         if message_history[i].role == "user" then
-          result_text = result_text .. _("User: ") .. message_history[i].content .. "\n\n"
-        else
-          result_text = result_text .. _("Assistant: ") .. message_history[i].content .. "\n\n"
+          result_text = result_text .. _("高亮文本: ") .. message_history[i].content .. "\n\n"
+        elseif message_history[i].role == "assistant" then
+          result_text = result_text .. _("AI助手: ") .. message_history[i].content .. "\n\n"
         end
       end
 
       local chatgpt_viewer = ChatGPTViewer:new{
-        title = _("AskGPT"),
+        title = _("AI伴读"),
         text = result_text,
         reader_highlight_instance = _reader_highlight_instance,
         latest_response = answer,  -- Pass the latest GPT response
         onAskQuestion = function(chatgpt_viewer, question)
           table.insert(message_history, { role = "user", content = question })
 
-          local answer, error_msg
-          success, error_msg = pcall(function()
-            answer = queryChatGPT(message_history)
+          local followup_answer, followup_error
+          local followup_success, followup_result = pcall(function()
+            return queryChatGPT(message_history)
           end)
 
-          if success and answer then
-            table.insert(message_history, { role = "assistant", content = answer })
+          if followup_success and followup_result then
+            followup_answer = normalize_whitespace(followup_result)
+            table.insert(message_history, { role = "assistant", content = followup_answer })
 
             local result_text = ""
             for i = 1, #message_history do
               if message_history[i].role == "user" then
-                result_text = result_text .. _("User: ") .. message_history[i].content .. "\n\n"
-              else
-                result_text = result_text .. _("Assistant: ") .. message_history[i].content .. "\n\n"
+                result_text = result_text .. _("高亮文本: ") .. message_history[i].content .. "\n\n"
+              elseif message_history[i].role == "assistant" then
+                result_text = result_text .. _("AI助手: ") .. message_history[i].content .. "\n\n"
               end
             end
 
-            chatgpt_viewer:update(result_text, answer)  -- Pass the latest response when updating
+            chatgpt_viewer:update(result_text, followup_answer)  -- Pass the latest response when updating
           else
-            local error_text = error_msg and tostring(error_msg) or "Unknown error occurred"
+            local error_text = followup_result and tostring(followup_result) or "Unknown error occurred"
             UIManager:show(InfoMessage:new{ text = _("Error querying AI: " .. error_text), timeout = 5 })
           end
         end

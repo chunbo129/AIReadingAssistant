@@ -1,0 +1,9 @@
+{
+  "model": "doubao-seed-1-6-250615",
+  "messages": [
+    {
+      "role": "user",
+      "content": "Translate to Chinese: Ukrainian defense technology incubator Brave1 announced the ‘Test in Ukraine programme’ which would take prototypes from allied countries, test them in real time on the battlefield and supply detailed reports for improvements."
+    }
+  ]
+}

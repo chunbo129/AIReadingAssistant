@@ -6,6 +6,15 @@ local _ = require("gettext")
 
 local queryChatGPT = require("gpt_query")
 
+-- Helper function to normalize whitespace in AI responses
+local function normalize_whitespace(text)
+  if not text then return "" end
+  -- Replace tabs with spaces, then multiple spaces with a single space
+  text = text:gsub("\t", " "):gsub(" +", " ")
+  -- Trim leading/trailing whitespace
+  return text:match("^%s*(.-)%s*$")
+end
+
 local CONFIGURATION = nil
 local buttons, input_dialog
 
@@ -15,54 +24,6 @@ if success then
 else
   print("configuration.lua not found, skipping...")
 end
-
--- Strips basic markdown formatting from text.
--- This function handles headings, bold, italics, and inline code.
-local function strip_markdown(text)
-    if not text then return "" end
-
-    -- Remove markdown headings (e.g., "### Title")
-    text = text:gsub("\n#+ ", "\n") -- For headings on new lines
-    text = text:gsub("^#+ ", "")      -- For a heading at the start of the text
-
-    -- Remove markdown for inline code (`code`)
-    text = text:gsub("`([^`]+)`", "%1")
-
-    -- Remove markdown emphasis (bold, italics)
-    -- Note: The '%*' escapes the '*' (a magic character in Lua patterns).
-    -- We replace bold (**text**) first, then italics (*text*).
-    text = text:gsub("%*%*(.-)%*%*", "%1") -- Bold: **text** -> text
-    text = text:gsub("%*(.-)%*", "%1")     -- Italics: *text* -> text
-    
-    -- Remove markdown emphasis with underscores
-    text = text:gsub("__(.-)__", "%1")     -- Bold: __text__ -> text
-    text = text:gsub("_(.-)_", "%1")       -- Italics: _text_ -> text
-    
-    -- Remove markdown links [text](url)
-    text = text:gsub("%[(.-)%]%(.-%)", "%1")
-    
-    -- Remove markdown blockquotes
-    text = text:gsub("\n> ", "\n")
-    text = text:gsub("^> ", "")
-    
-    -- Remove markdown lists
-    text = text:gsub("\n%d+%. ", "\n")  -- Ordered lists: 1. item
-    text = text:gsub("^%d+%. ", "")     -- Ordered list at start
-    text = text:gsub("\n%- ", "\n")     -- Unordered lists: - item
-    text = text:gsub("^%- ", "")        -- Unordered list at start
-    text = text:gsub("\n%* ", "\n")     -- Unordered lists: * item
-    text = text:gsub("^%* ", "")        -- Unordered list at start
-    
-    -- Remove markdown horizontal rules
-    text = text:gsub("\n%-%-%-+\n", "\n\n") -- ---
-    text = text:gsub("\n%*%*%*+\n", "\n\n") -- ***
-    
-    -- Remove markdown code blocks
-    text = text:gsub("```[^\n]*\n(.-)```", "%1")
-
-    return text
-end
-
 
 local function translateText(text, target_language)
   local translation_message = {
@@ -76,16 +37,16 @@ local function translateText(text, target_language)
     },
     translation_message
   }
-  return strip_markdown(queryChatGPT(translation_history))
+  local answer = queryChatGPT(translation_history)
+  return normalize_whitespace(answer)
 end
 
-local function createResultText(highlightedText, message_history)
-  local result_text = _("Highlighted text: ") .. '"' .. highlightedText .. '"' .. "\n\n"
-
-  for i = 3, #message_history do
+local function createResultText(message_history)
+  local result_text = ""
+  for i = 1, #message_history do
     if message_history[i].role == "user" then
       result_text = result_text .. _("User: ") .. message_history[i].content .. "\n\n"
-    else
+    elseif message_history[i].role == "assistant" then
       result_text = result_text .. _("ChatGPT: ") .. message_history[i].content .. "\n\n"
     end
   end
@@ -107,7 +68,7 @@ local function showChatGPTDialog(ui, highlightedText, message_history)
     ui.document:getProps().authors or _("Unknown Author")
   local message_history = message_history or {{
     role = "system",
-    content = "The following is a conversation with an AI assistant. The assistant is helpful, creative, clever, and very friendly. Answer as concisely as possible."
+    content = "The following is a conversation with an AI assistant. The assistant is helpful, creative, clever, and very friendly. Answer as concisely as possible.\n\n请返回纯文本，不要包含markdown格式符号"
   }}
 
   local function handleNewQuestion(chatgpt_viewer, question)
@@ -116,14 +77,14 @@ local function showChatGPTDialog(ui, highlightedText, message_history)
       content = question
     })
 
-    local answer = strip_markdown(queryChatGPT(message_history))
+    local answer = normalize_whitespace(queryChatGPT(message_history))
 
     table.insert(message_history, {
       role = "assistant",
       content = answer
     })
 
-    local result_text = createResultText(highlightedText, message_history)
+    local result_text = createResultText(message_history)
 
     chatgpt_viewer:update(result_text)
   end
@@ -156,17 +117,17 @@ local function showChatGPTDialog(ui, highlightedText, message_history)
           }
           table.insert(message_history, question_message)
 
-          local answer = strip_markdown(queryChatGPT(message_history))
+          local answer = normalize_whitespace(queryChatGPT(message_history))
           local answer_message = {
             role = "assistant",
             content = answer
           }
           table.insert(message_history, answer_message)
 
-          local result_text = createResultText(highlightedText, message_history)
+          local result_text = createResultText(message_history)
 
           local chatgpt_viewer = ChatGPTViewer:new {
-            title = _("AskGPT"),
+            title = _("AI伴读"),
             text = result_text,
             onAskQuestion = handleNewQuestion
           }
@@ -196,7 +157,7 @@ local function showChatGPTDialog(ui, highlightedText, message_history)
             content = translated_text
           })
 
-          local result_text = createResultText(highlightedText, message_history)
+          local result_text = createResultText(message_history)
           local chatgpt_viewer = ChatGPTViewer:new {
             title = _("Translation"),
             text = result_text,
