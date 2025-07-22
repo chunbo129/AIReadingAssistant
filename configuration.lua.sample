@@ -1,30 +1,50 @@
 local CONFIGURATION = {
   -- Replace with your actual API key
-  api_key = "YOUR_API_KEY",
+  -- 在此处填入您的 API 密钥
+  api_key = "",
 
   -- Replace with your choice of model
+  -- 在此处填入您选择的模型
   model = "doubao-seed-1-6-flash-250615",
 
-  -- API endpoint for Gemini (with :generateContent)
+  -- API endpoint for the large language model
+  -- 大语言模型的 API 接入点
+  -- Common endpoints / 常用接入点:
+  --   - OpenAI: https://api.openai.com/v1/chat/completions
+  --   - Google (Gemini): https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent
+  --   - VolcEngine (火山引擎): https://ark.cn-beijing.volces.com/api/v3/chat/completions
+  --   - DeepSeek: https://api.deepseek.com/chat/completions
   api_endpoint = "https://ark.cn-beijing.volces.com/api/v3/chat/completions",
 
-  -- Default system prompt used when asking ChatGPT a question
+  -- Default system prompt used when asking the large language model a question
   -- It can be overridden by setting a custom prompt in the plugin settings
- prompt1 = "你是一名资深的人文社科学者，擅长用通俗易懂的语言和形象的类比来解释艰深晦涩的概念、史实。请直接对文本进行解读，将你的输出限制在200字以内",
-
-  -- Default system prompt used when asking ChatGPT a question
-  -- It can be overridden by setting a custom prompt in the plugin settings
- prompt2 = "你是一名有二十年经验的专业英译中翻译，擅长将人文社科类作品翻译成高质量的中文译文，你的翻译文笔流畅优美且没有翻译腔。",
-
-  -- Default system prompt used when asking ChatGPT a question
-  -- It can be overridden by setting a custom prompt in the plugin settings
-  prompt3 = "请结合网络资料介绍这段文本中涉及到的相关事件、概念等相关信息，将你的输出限制在200字以内",
-
-
+  -- 向大语言模型提问时使用的默认系统提示
+  -- 可以在插件设置中设置自定义提示来覆盖它
+  prompt1 = "你是一名资深的英语教师和语言学习助手，擅长从词义分析、词根词缀、单词变形、场景例句等多维度帮助学生记忆单词。请帮我展开解释单词或词组。请返回纯文本，不要使用markdown格式。",
+  
   -- Text to display in the highlight menu for each prompt
-  menu_text1 = "概念解析",
-  menu_text2 = "翻译",
-  menu_text3 = "知识拓展",
+  -- 每个提示在快捷菜单中显示的文本
+  menu_text1 = "单词解析",
+
+  -- Default system prompt used when asking the large language model a question
+  -- It can be overridden by setting a custom prompt in the plugin settings
+  -- 向大语言模型提问时使用的默认系统提示
+  -- 可以在插件设置中设置自定义提示来覆盖它
+  prompt2 = "你是一名资深的英语翻译和语言学习助手，请翻译句子并帮我理解句子中的重点词句和语法。请返回纯文本，不要使用markdown格式。",
+  
+  -- Text to display in the highlight menu for each prompt
+  -- 每个提示在快捷菜单中显示的文本
+  menu_text2 = "句子翻译",
+
+  -- Default system prompt used when asking the large language model a question
+  -- It can be overridden by setting a custom prompt in the plugin settings
+  -- 向大语言模型提问时使用的默认系统提示
+  -- 可以在插件设置中设置自定义提示来覆盖它
+  prompt3 = "你是一名资深的英语教师和语言学习助手，请帮我分析解读这个句子的语法，并展开介绍相关语法知识点。请返回纯文本，不要使用markdown格式。",
+  
+  -- Text to display in the highlight menu for each prompt
+  -- 每个提示在快捷菜单中显示的文本
+  menu_text3 = "语法分析",
 }
 
 return CONFIGURATION

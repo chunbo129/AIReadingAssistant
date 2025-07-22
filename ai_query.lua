@@ -17,7 +17,7 @@ else
   print("configuration.lua not found, skipping...")
 end
 
--- Define your queryChatGPT function
+-- Define your queryAI function
 local https = require("ssl.https")
 local http = require("socket.http")
 local ltn12 = require("ltn12")
@@ -81,7 +81,7 @@ local function parseOpenAIResponse(response)
   error("Invalid OpenAI response format: " .. json.encode(response))
 end
 
-local function queryChatGPT(message_history)
+local function queryAI(message_history)
   -- Use api_key from CONFIGURATION or fallback to the api_key module
   local api_key_value = CONFIGURATION and CONFIGURATION.api_key or api_key
   local api_url = CONFIGURATION and CONFIGURATION.api_endpoint or "https://api.openai.com/v1/chat/completions"
@@ -143,4 +143,4 @@ local function queryChatGPT(message_history)
   end
 end
 
-return queryChatGPT
+return queryAI

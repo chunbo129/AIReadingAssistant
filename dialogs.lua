@@ -1,10 +1,10 @@
 local InputDialog = require("ui/widget/inputdialog")
-local ChatGPTViewer = require("chatgptviewer")
+local AICompanionViewer = require("aicompanionviewer")
 local UIManager = require("ui/uimanager")
 local InfoMessage = require("ui/widget/infomessage")
 local _ = require("gettext")
 
-local queryChatGPT = require("gpt_query")
+local queryAI = require("ai_query")
 
 -- Helper function to normalize whitespace in AI responses
 local function normalize_whitespace(text)
@@ -37,7 +37,7 @@ local function translateText(text, target_language)
     },
     translation_message
   }
-  local answer = queryChatGPT(translation_history)
+  local answer = queryAI(translation_history)
   return normalize_whitespace(answer)
 end
 
@@ -45,9 +45,9 @@ local function createResultText(message_history)
   local result_text = ""
   for i = 1, #message_history do
     if message_history[i].role == "user" then
-      result_text = result_text .. _("User: ") .. message_history[i].content .. "\n\n"
+      result_text = result_text .. _("用户: ") .. message_history[i].content .. "\n\n"
     elseif message_history[i].role == "assistant" then
-      result_text = result_text .. _("ChatGPT: ") .. message_history[i].content .. "\n\n"
+      result_text = result_text .. _("AI: ") .. message_history[i].content .. "\n\n"
     end
   end
 
@@ -56,13 +56,13 @@ end
 
 local function showLoadingDialog()
   local loading = InfoMessage:new{
-    text = _("Loading..."),
+    text = _("加载中..."),
     timeout = 0.1
   }
   UIManager:show(loading)
 end
 
-local function showChatGPTDialog(ui, highlightedText, message_history)
+local function showAIDialog(ui, highlightedText, message_history)
   local title, author =
     ui.document:getProps().title or _("Unknown Title"),
     ui.document:getProps().authors or _("Unknown Author")
@@ -71,13 +71,13 @@ local function showChatGPTDialog(ui, highlightedText, message_history)
     content = "The following is a conversation with an AI assistant. The assistant is helpful, creative, clever, and very friendly. Answer as concisely as possible.\n\n请返回纯文本，不要包含markdown格式符号"
   }}
 
-  local function handleNewQuestion(chatgpt_viewer, question)
+  local function handleNewQuestion(aicompanion_viewer, question)
     table.insert(message_history, {
       role = "user",
       content = question
     })
 
-    local answer = normalize_whitespace(queryChatGPT(message_history))
+    local answer = normalize_whitespace(queryAI(message_history))
 
     table.insert(message_history, {
       role = "assistant",
@@ -86,18 +86,18 @@ local function showChatGPTDialog(ui, highlightedText, message_history)
 
     local result_text = createResultText(message_history)
 
-    chatgpt_viewer:update(result_text)
+    aicompanion_viewer:update(result_text)
   end
 
   buttons = {
     {
-      text = _("Cancel"),
+      text = _("取消"),
       callback = function()
         UIManager:close(input_dialog)
       end
     },
     {
-      text = _("Ask"),
+      text = _("提问"),
       callback = function()
         local question = input_dialog:getInputText()
         UIManager:close(input_dialog)
@@ -117,7 +117,7 @@ local function showChatGPTDialog(ui, highlightedText, message_history)
           }
           table.insert(message_history, question_message)
 
-          local answer = normalize_whitespace(queryChatGPT(message_history))
+          local answer = normalize_whitespace(queryAI(message_history))
           local answer_message = {
             role = "assistant",
             content = answer
@@ -126,13 +126,13 @@ local function showChatGPTDialog(ui, highlightedText, message_history)
 
           local result_text = createResultText(message_history)
 
-          local chatgpt_viewer = ChatGPTViewer:new {
+          local aicompanion_viewer = AICompanionViewer:new {
             title = _("AI伴读"),
             text = result_text,
             onAskQuestion = handleNewQuestion
           }
 
-          UIManager:show(chatgpt_viewer)
+          UIManager:show(aicompanion_viewer)
         end)
       end
     }
@@ -140,7 +140,7 @@ local function showChatGPTDialog(ui, highlightedText, message_history)
 
   if CONFIGURATION and CONFIGURATION.features and CONFIGURATION.features.translate_to then
     table.insert(buttons, {
-      text = _("Translate"),
+      text = _("翻译"),
       callback = function()
         showLoadingDialog()
 
@@ -158,25 +158,25 @@ local function showChatGPTDialog(ui, highlightedText, message_history)
           })
 
           local result_text = createResultText(message_history)
-          local chatgpt_viewer = ChatGPTViewer:new {
-            title = _("Translation"),
+          local aicompanion_viewer = AICompanionViewer:new {
+            title = _("翻译结果"),
             text = result_text,
             onAskQuestion = handleNewQuestion
           }
 
-          UIManager:show(chatgpt_viewer)
+          UIManager:show(aicompanion_viewer)
         end)
       end
     })
   end
 
   input_dialog = InputDialog:new{
-    title = _("Ask a question about the highlighted text"),
-    input_hint = _("Type your question here..."),
+    title = _("针对高亮文本提问"),
+    input_hint = _("在此输入您的问题..."),
     input_type = "text",
     buttons = {buttons}
   }
   UIManager:show(input_dialog)
 end
 
-return showChatGPTDialog
+return showAIDialog

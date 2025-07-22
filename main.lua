@@ -2,14 +2,14 @@ local Device = require("device")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local NetworkMgr = require("ui/network/manager")
 local _ = require("gettext")
-local ChatGPTViewer = require("chatgptviewer")
+local AICompanionViewer = require("aicompanionviewer")
 local UIManager = require("ui/uimanager")
 local InfoMessage = require("ui/widget/infomessage")
 local Notification = require("ui/widget/notification")
 
-local showChatGPTDialog = require("dialogs")
-local UpdateChecker = require("update_checker")
-local queryChatGPT = require("gpt_query")
+local showAIDialog = require("dialogs")
+
+local queryAI = require("ai_query")
 
 -- Helper function to normalize whitespace in AI responses
 local function normalize_whitespace(text)
@@ -20,14 +20,14 @@ local function normalize_whitespace(text)
   return text:match("^%s*(.-)%s*$")
 end
 
-local AskGPT = InputContainer:new {
-  name = "askgpt",
+local AIReadingAssistant = InputContainer:new {
+  name = "aireadingassistant",
   is_doc_only = true,
 }
 
 local updateMessageShown = false
 
-function AskGPT:init()
+function AIReadingAssistant:init()
   local success, result = pcall(function() return require("configuration") end)
   local CONFIGURATION
   if success then
@@ -36,7 +36,7 @@ function AskGPT:init()
     print("configuration.lua not found, using default menu text")
   end
 
-  self.ui.highlight:addToHighlightDialog("askgpt_ChatGPT_Prompt1", function(_reader_highlight_instance)
+  self.ui.highlight:addToHighlightDialog("aireadingassistant_AI_Prompt1", function(_reader_highlight_instance)
     return {
       text = CONFIGURATION and CONFIGURATION.menu_text1 or "AI概念解析",
       enabled = true,
@@ -46,7 +46,7 @@ function AskGPT:init()
     }
   end)
 
-  self.ui.highlight:addToHighlightDialog("askgpt_ChatGPT_Prompt2", function(_reader_highlight_instance)
+  self.ui.highlight:addToHighlightDialog("aireadingassistant_AI_Prompt2", function(_reader_highlight_instance)
     return {
       text = CONFIGURATION and CONFIGURATION.menu_text2 or "AI翻译",
       enabled = true,
@@ -56,7 +56,7 @@ function AskGPT:init()
     }
   end)
 
-  self.ui.highlight:addToHighlightDialog("askgpt_ChatGPT_Prompt3", function(_reader_highlight_instance)
+  self.ui.highlight:addToHighlightDialog("aireadingassistant_AI_Prompt3", function(_reader_highlight_instance)
     return {
       text = CONFIGURATION and CONFIGURATION.menu_text3 or "AI知识扩展",
       enabled = true,
@@ -66,9 +66,9 @@ function AskGPT:init()
     }
   end)
 
-  self.ui.highlight:addToHighlightDialog("askgpt_ChatGPT_Custom", function(_reader_highlight_instance)
+  self.ui.highlight:addToHighlightDialog("aireadingassistant_AI_Custom", function(_reader_highlight_instance)
     return {
-      text = _("Ask AI"),
+      text = _("问 AI"),
       enabled = true,
       callback = function()
         self:handleCustomPrompt(_reader_highlight_instance)
@@ -77,20 +77,20 @@ function AskGPT:init()
   end)
 end
 
-function AskGPT:handleCustomPrompt(_reader_highlight_instance)
+function AIReadingAssistant:handleCustomPrompt(_reader_highlight_instance)
   NetworkMgr:runWhenOnline(function()
     if not updateMessageShown then
-      UpdateChecker.checkForUpdates()
+      -- UpdateChecker.checkForUpdates()
       updateMessageShown = true
     end
-    showChatGPTDialog(self.ui, _reader_highlight_instance.selected_text.text)
+    showAIDialog(self.ui, _reader_highlight_instance.selected_text.text)
   end)
 end
 
-function AskGPT:handlePrompt(prompt_number, _reader_highlight_instance)
+function AIReadingAssistant:handlePrompt(prompt_number, _reader_highlight_instance)
   NetworkMgr:runWhenOnline(function()
     if not updateMessageShown then
-      UpdateChecker.checkForUpdates()
+      -- UpdateChecker.checkForUpdates()
       updateMessageShown = true
     end
 
@@ -118,7 +118,7 @@ function AskGPT:handlePrompt(prompt_number, _reader_highlight_instance)
 
     local answer, error_msg
     success, error_msg = pcall(function()
-      return queryChatGPT(message_history)
+      return queryAI(message_history)
     end)
 
     if success and error_msg then
@@ -128,23 +128,23 @@ function AskGPT:handlePrompt(prompt_number, _reader_highlight_instance)
       local result_text = ""
       for i = 1, #message_history do
         if message_history[i].role == "user" then
-          result_text = result_text .. _("高亮文本: ") .. message_history[i].content .. "\n\n"
+          result_text = result_text .. _("原文: ") .. message_history[i].content .. "\n\n"
         elseif message_history[i].role == "assistant" then
           result_text = result_text .. _("AI助手: ") .. message_history[i].content .. "\n\n"
         end
       end
 
-      local chatgpt_viewer = ChatGPTViewer:new{
-        title = _("AI伴读"),
+      local aicompanion_viewer = AICompanionViewer:new{
+        title = _("AI阅读助手"),
         text = result_text,
         reader_highlight_instance = _reader_highlight_instance,
-        latest_response = answer,  -- Pass the latest GPT response
-        onAskQuestion = function(chatgpt_viewer, question)
+        latest_response = answer,  -- Pass the latest AI response
+        onAskQuestion = function(aicompanion_viewer, question)
           table.insert(message_history, { role = "user", content = question })
 
           local followup_answer, followup_error
           local followup_success, followup_result = pcall(function()
-            return queryChatGPT(message_history)
+            return queryAI(message_history)
           end)
 
           if followup_success and followup_result then
@@ -154,26 +154,26 @@ function AskGPT:handlePrompt(prompt_number, _reader_highlight_instance)
             local result_text = ""
             for i = 1, #message_history do
               if message_history[i].role == "user" then
-                result_text = result_text .. _("高亮文本: ") .. message_history[i].content .. "\n\n"
+                result_text = result_text .. _("原文: ") .. message_history[i].content .. "\n\n"
               elseif message_history[i].role == "assistant" then
-                result_text = result_text .. _("AI助手: ") .. message_history[i].content .. "\n\n"
+                result_text = result_text .. _("AI: ") .. message_history[i].content .. "\n\n"
               end
             end
 
-            chatgpt_viewer:update(result_text, followup_answer)  -- Pass the latest response when updating
+            aicompanion_viewer:update(result_text, followup_answer)  -- Pass the latest response when updating
           else
-            local error_text = followup_result and tostring(followup_result) or "Unknown error occurred"
-            UIManager:show(InfoMessage:new{ text = _("Error querying AI: " .. error_text), timeout = 5 })
+            local error_text = followup_result and tostring(followup_result) or "发生未知错误"
+            UIManager:show(InfoMessage:new{ text = _("AI 查询出错: " .. error_text), timeout = 5 })
           end
         end
       }
 
-      UIManager:show(chatgpt_viewer)
+      UIManager:show(aicompanion_viewer)
     else
-      local error_text = error_msg and tostring(error_msg) or "Unknown error occurred"
-      UIManager:show(InfoMessage:new{ text = _("Error querying AI: " .. error_text), timeout = 5 })
+      local error_text = error_msg and tostring(error_msg) or "发生未知错误"
+      UIManager:show(InfoMessage:new{ text = _("AI 查询出错: " .. error_text), timeout = 5 })
     end
   end)
 end
 
-return AskGPT
+return AIReadingAssistant

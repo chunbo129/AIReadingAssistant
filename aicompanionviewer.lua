@@ -2,11 +2,11 @@
 Displays some text in a scrollable view.
 
 @usage
-    local chatgptviewer = ChatGPTViewer:new{
+    local aicompanionviewer = AICompanionViewer:new{
         title = _("I can scroll!"),
         text = _("I'll need to be longer than this example to scroll."),
     }
-    UIManager:show(chatgptviewer)
+    UIManager:show(aicompanionviewer)
 ]]
 local BD = require("ui/bidi")
 local Blitbuffer = require("ffi/blitbuffer")
@@ -33,14 +33,14 @@ local util = require("util")
 local _ = require("gettext")
 local Screen = Device.screen
 
-local ChatGPTViewer = InputContainer:extend {
+local AICompanionViewer = InputContainer:extend {
   title = nil,
   text = nil,
   width = nil,
   height = nil,
   buttons_table = nil,
   reader_highlight_instance = nil,  -- Added to store the highlight instance
-  latest_response = nil,  -- Store the latest GPT response
+  latest_response = nil,  -- Store the latest AI response
   -- See TextBoxWidget for details about these options
   -- We default to justified and auto_para_direction to adapt
   -- to any kind of text we are given (book descriptions,
@@ -70,7 +70,7 @@ local ChatGPTViewer = InputContainer:extend {
   onAskQuestion = nil,
 }
 
-function ChatGPTViewer:init()
+function AICompanionViewer:init()
   -- calculate window dimension
   self.align = "center"
   self.region = Geom:new {
@@ -191,7 +191,7 @@ function ChatGPTViewer:init()
   local default_buttons =
   {
     {
-      text = _("Save as note"),
+      text = _("保存为笔记"),
       id = "save_as_note",
       callback = function()
         if self.reader_highlight_instance and self.latest_response then
@@ -201,7 +201,7 @@ function ChatGPTViewer:init()
       end,
     },
     {
-      text = _("Ask Another Question"),
+      text = _("追问"),
       id = "ask_another_question",
       callback = function()
         self:askAnotherQuestion()
@@ -226,7 +226,7 @@ function ChatGPTViewer:init()
       allow_hold_when_disabled = true,
     },
     {
-      text = _("Close"),
+      text = _("关闭"),
       callback = function()
         self:onClose()
       end,
@@ -312,23 +312,23 @@ function ChatGPTViewer:init()
   }
 end
 
-function ChatGPTViewer:askAnotherQuestion()
+function AICompanionViewer:askAnotherQuestion()
   local input_dialog
   input_dialog = InputDialog:new {
-    title = _("Ask another question"),
+    title = _("新问题"),
     input = "",
     input_type = "text",
-    description = _("Enter your question for ChatGPT."),
+    description = _("请输入问题..."),
     buttons = {
       {
         {
-          text = _("Cancel"),
+          text = _("取消"),
           callback = function()
             UIManager:close(input_dialog)
           end,
         },
         {
-          text = _("Ask"),
+          text = _("提问"),
           is_enter_default = true,
           callback = function()
             local input_text = input_dialog:getInputText()
@@ -345,27 +345,27 @@ function ChatGPTViewer:askAnotherQuestion()
   input_dialog:onShowKeyboard()
 end
 
-function ChatGPTViewer:onCloseWidget()
+function AICompanionViewer:onCloseWidget()
   UIManager:setDirty(nil, function()
     return "partial", self.frame.dimen
   end)
 end
 
-function ChatGPTViewer:onShow()
+function AICompanionViewer:onShow()
   UIManager:setDirty(self, function()
     return "partial", self.frame.dimen
   end)
   return true
 end
 
-function ChatGPTViewer:onTapClose(arg, ges_ev)
+function AICompanionViewer:onTapClose(arg, ges_ev)
   if ges_ev.pos:notIntersectWith(self.frame.dimen) then
     self:onClose()
   end
   return true
 end
 
-function ChatGPTViewer:onMultiSwipe(arg, ges_ev)
+function AICompanionViewer:onMultiSwipe(arg, ges_ev)
   -- For consistency with other fullscreen widgets where swipe south can't be
   -- used to close and where we then allow any multiswipe to close, allow any
   -- multiswipe to close this widget too.
@@ -373,7 +373,7 @@ function ChatGPTViewer:onMultiSwipe(arg, ges_ev)
   return true
 end
 
-function ChatGPTViewer:onClose()
+function AICompanionViewer:onClose()
   UIManager:close(self)
   if self.close_callback then
     self.close_callback()
@@ -381,7 +381,7 @@ function ChatGPTViewer:onClose()
   return true
 end
 
-function ChatGPTViewer:onSwipe(arg, ges)
+function AICompanionViewer:onSwipe(arg, ges)
   if ges.pos:intersectWith(self.textw.dimen) then
     local direction = BD.flipDirectionIfMirroredUILayout(ges.direction)
     if direction == "west" then
@@ -405,13 +405,13 @@ end
 -- The following handlers are similar to the ones in DictQuickLookup:
 -- we just forward to our MoveableContainer the events that our
 -- TextBoxWidget has not handled with text selection.
-function ChatGPTViewer:onHoldStartText(_, ges)
+function AICompanionViewer:onHoldStartText(_, ges)
   -- Forward Hold events not processed by TextBoxWidget event handler
   -- to our MovableContainer
   return self.movable:onMovableHold(_, ges)
 end
 
-function ChatGPTViewer:onHoldPanText(_, ges)
+function AICompanionViewer:onHoldPanText(_, ges)
   -- Forward Hold events not processed by TextBoxWidget event handler
   -- to our MovableContainer
   -- We only forward it if we did forward the Touch
@@ -420,7 +420,7 @@ function ChatGPTViewer:onHoldPanText(_, ges)
   end
 end
 
-function ChatGPTViewer:onHoldReleaseText(_, ges)
+function AICompanionViewer:onHoldReleaseText(_, ges)
   -- Forward Hold events not processed by TextBoxWidget event handler
   -- to our MovableContainer
   return self.movable:onMovableHoldRelease(_, ges)
@@ -430,7 +430,7 @@ end
 -- to our MovableContainer, under certain conditions, to avoid
 -- unwanted moves of the window while we are selecting text in
 -- the definition widget.
-function ChatGPTViewer:onForwardingTouch(arg, ges)
+function AICompanionViewer:onForwardingTouch(arg, ges)
   -- This Touch may be used as the Hold we don't get (for example,
   -- when we start our Hold on the bottom buttons)
   if not ges.pos:intersectWith(self.textw.dimen) then
@@ -441,19 +441,19 @@ function ChatGPTViewer:onForwardingTouch(arg, ges)
   end
 end
 
-function ChatGPTViewer:onForwardingPan(arg, ges)
+function AICompanionViewer:onForwardingPan(arg, ges)
   -- We only forward it if we did forward the Touch or are currently moving
   if self.movable._touch_pre_pan_was_inside or self.movable._moving then
     return self.movable:onMovablePan(arg, ges)
   end
 end
 
-function ChatGPTViewer:onForwardingPanRelease(arg, ges)
+function AICompanionViewer:onForwardingPanRelease(arg, ges)
   -- We can forward onMovablePanRelease() does enough checks
   return self.movable:onMovablePanRelease(arg, ges)
 end
 
-function ChatGPTViewer:handleTextSelection(text, hold_duration, start_idx, end_idx, to_source_index_func)
+function AICompanionViewer:handleTextSelection(text, hold_duration, start_idx, end_idx, to_source_index_func)
   if self.text_selection_callback then
     self.text_selection_callback(text, hold_duration, start_idx, end_idx, to_source_index_func)
     return
@@ -461,9 +461,9 @@ function ChatGPTViewer:handleTextSelection(text, hold_duration, start_idx, end_i
   -- Removed clipboard functionality since we're using direct note saving
 end
 
-function ChatGPTViewer:update(new_text, new_response)
+function AICompanionViewer:update(new_text, new_response)
   UIManager:close(self)
-  local updated_viewer = ChatGPTViewer:new {
+  local updated_viewer = AICompanionViewer:new {
     title = self.title,
     text = new_text,
     width = self.width,
@@ -477,4 +477,4 @@ function ChatGPTViewer:update(new_text, new_response)
   UIManager:show(updated_viewer)
 end
 
-return ChatGPTViewer
+return AICompanionViewer
