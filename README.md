@@ -24,7 +24,7 @@
 3.  稍等片刻，AI 的回答就会出现在一个新窗口中。
 4.  你可以继续**追问**，或者将回答**保存为笔记**。
 
-<img src="E:\Downloads\Screenshot_2025-07-22-14-11-49-904_org.koreader.launcher.jpg" alt="Screenshot_2025-07-22-14-11-49-904_org.koreader.launcher" style="zoom:50%;" />
+![AI 阅读助手使用截图](https://github.com/chunbo129/AIReadingAssistant/blob/main/Screenshot_org.koreader.launcher.jpg?raw=true)
 
 ---
 
@@ -89,4 +89,12 @@
 
 ---
 
-本项目根据 MIT 许可证发布。
+## 致谢
+
+本项目基于 [drewbaumann/AskGPT](https://github.com/drewbaumann/AskGPT) 项目进行二次开发，并针对中文阅读场景进行了优化。感谢原作者的杰出工作！
+
+---
+
+## 许可证
+
+本插件遵循 **GPLv3** 许可证发布。这意味着您可以自由地使用、修改和分发本软件，但任何基于此代码的衍生作品也必须以同样的 GPLv3 许可证开源。完整的许可证文本请参见 `LICENSE` 文件。
