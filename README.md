@@ -24,7 +24,7 @@
 3.  稍等片刻，AI 的回答就会出现在一个新窗口中。
 4.  你可以继续**追问**，或者将回答**保存为笔记**。
 
-<img src="E:\Downloads\Screenshot_2025-07-22-14-11-49-904_org.koreader.launcher.jpg" alt="Screenshot_2025-07-22-14-11-49-904_org.koreader.launcher" style="zoom:50%;" />
+<img src="[界面截图](https://github.com/chunbo129/AIReadingAssistant/blob/main/Screenshot_org.koreader.launcher.jpg)" alt="Screenshot_2025-07-22-14-11-49-904_org.koreader.launcher" style="zoom:50%;" />
 
 ---
 
