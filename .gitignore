@@ -1,2 +1,11 @@
+# Ignore the actual configuration file containing private keys
+aireadingassistant.koplugin/configuration.lua
+
+# Ignore legacy or root-level config files
 /api_key.lua
 /configuration.lua
+
+# Common ignores
+.env
+*.log
+.DS_Store

@@ -15,6 +15,7 @@ local CenterContainer = require("ui/widget/container/centercontainer")
 local CheckButton = require("ui/widget/checkbutton")
 local Device = require("device")
 local Geom = require("ui/geometry")
+local FocusManager = require("ui/widget/focusmanager")
 local Font = require("ui/font")
 local FrameContainer = require("ui/widget/container/framecontainer")
 local GestureRange = require("ui/gesturerange")
@@ -33,7 +34,7 @@ local util = require("util")
 local _ = require("gettext")
 local Screen = Device.screen
 
-local AICompanionViewer = InputContainer:extend {
+local AICompanionViewer = FocusManager:extend {
   title = nil,
   text = nil,
   width = nil,
@@ -41,6 +42,7 @@ local AICompanionViewer = InputContainer:extend {
   buttons_table = nil,
   reader_highlight_instance = nil,  -- Added to store the highlight instance
   latest_response = nil,  -- Store the latest AI response
+  covers_fullscreen = true,
   -- See TextBoxWidget for details about these options
   -- We default to justified and auto_para_direction to adapt
   -- to any kind of text we are given (book descriptions,
@@ -80,6 +82,10 @@ function AICompanionViewer:init()
   }
   self.width = self.width or Screen:getWidth() - Screen:scaleBySize(30)
   self.height = self.height or Screen:getHeight() - Screen:scaleBySize(30)
+
+  if self.text then
+    self.text = self.text:gsub("[#*]", "")
+  end
 
   self._find_next = false
   self._find_next_button = false
@@ -470,6 +476,7 @@ function AICompanionViewer:update(new_text, new_response)
     height = self.height,
     buttons_table = self.buttons_table,
     onAskQuestion = self.onAskQuestion,
+    close_callback = self.close_callback,
     reader_highlight_instance = self.reader_highlight_instance,  -- Preserve the highlight instance
     latest_response = new_response or self.latest_response,  -- Use new response if provided
   }

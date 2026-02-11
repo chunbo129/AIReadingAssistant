@@ -1,50 +1,60 @@
 local CONFIGURATION = {
   -- Replace with your actual API key
   -- 在此处填入您的 API 密钥
-  api_key = "",
+  api_key = "your_api_key_here",
 
   -- Replace with your choice of model
   -- 在此处填入您选择的模型
-  model = "doubao-seed-1-6-flash-250615",
+  -- 常用模型示例: "gpt-4o", "deepseek-chat", "doubao-pro-4k"
+  model = "gpt-4o",
 
   -- API endpoint for the large language model
   -- 大语言模型的 API 接入点
   -- Common endpoints / 常用接入点:
   --   - OpenAI: https://api.openai.com/v1/chat/completions
-  --   - Google (Gemini): https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent
-  --   - VolcEngine (火山引擎): https://ark.cn-beijing.volces.com/api/v3/chat/completions
   --   - DeepSeek: https://api.deepseek.com/chat/completions
-  api_endpoint = "https://ark.cn-beijing.volces.com/api/v3/chat/completions",
+  --   - VolcEngine (火山引擎/豆包): https://ark.cn-beijing.volces.com/api/v3/chat/completions
+  --   - Alibaba (通义千问): https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions
+  api_endpoint = "https://api.openai.com/v1/chat/completions",
 
   -- Default system prompt used when asking the large language model a question
-  -- It can be overridden by setting a custom prompt in the plugin settings
   -- 向大语言模型提问时使用的默认系统提示
-  -- 可以在插件设置中设置自定义提示来覆盖它
-  prompt1 = "你是一名资深的英语教师和语言学习助手，擅长从词义分析、词根词缀、单词变形、场景例句等多维度帮助学生记忆单词。请帮我展开解释单词或词组。请返回纯文本，不要使用markdown格式。",
-  
-  -- Text to display in the highlight menu for each prompt
+  prompt1 = "你是一名博学的百科全书式阅读助手。请对选中的名词、概念、人物、事件或专业术语进行深度解析：
+1. 【概念定义】：用通俗易懂的语言解释该概念的核心含义。
+2. 【背景延伸】：补充相关的历史背景、专业知识、文化典故或发展脉络。
+3. 【价值意义】：简述该概念在相关领域的重要性或现实意义。
+请返回不超过400字的纯文本，不要使用markdown格式（如**等）。",
   -- 每个提示在快捷菜单中显示的文本
-  menu_text1 = "单词解析",
+  menu_text1 = "概念解析",
 
-  -- Default system prompt used when asking the large language model a question
-  -- It can be overridden by setting a custom prompt in the plugin settings
-  -- 向大语言模型提问时使用的默认系统提示
-  -- 可以在插件设置中设置自定义提示来覆盖它
-  prompt2 = "你是一名资深的英语翻译和语言学习助手，请翻译句子并帮我理解句子中的重点词句和语法。请返回纯文本，不要使用markdown格式。",
-  
-  -- Text to display in the highlight menu for each prompt
-  -- 每个提示在快捷菜单中显示的文本
+  -- 下面是第二个菜单的配置（例如：翻译）
+  prompt2 = "你是一名资深的翻译家和语言专家。请执行以下任务：
+1. 【精准翻译】：将句子翻译成自然、流畅、优美的中文（信达雅）。
+2. 【重点词汇】：提取句中的核心词汇或短语，并附带简明释义。
+3. 【难点解析】：如果句子结构复杂，请简要分析其句子结构或语法难点。
+请返回纯文本，不要使用markdown格式。",
   menu_text2 = "句子翻译",
 
-  -- Default system prompt used when asking the large language model a question
-  -- It can be overridden by setting a custom prompt in the plugin settings
-  -- 向大语言模型提问时使用的默认系统提示
-  -- 可以在插件设置中设置自定义提示来覆盖它
-  prompt3 = "你是一名资深的英语教师和语言学习助手，请帮我分析解读这个句子的语法，并展开介绍相关语法知识点。请返回纯文本，不要使用markdown格式。",
-  
-  -- Text to display in the highlight menu for each prompt
-  -- 每个提示在快捷菜单中显示的文本
-  menu_text3 = "语法分析",
+  -- 下面是第三个菜单的配置（例如：语法分析）
+  prompt3 = "你是一名资深的语法学家。请对该句子进行详尽的句法分析：
+1. 【句子结构】：拆解主谓宾、从句、修饰语等成分。
+2. 【核心语法】：指出句中运用的关键语法规则（如时态、语态、倒装、虚拟语气等）。
+3. 【知识点扩展】：对涉及的语法点进行简要的教学拓展。
+请用清晰的层级结构返回纯文本，不要使用markdown格式。",
+  menu_text3 = "语法解析",
+
+  -- Maximum number of lines to display for AI responses in the viewer.
+  -- Responses longer than this will be truncated. Set to 0 or nil for no limit.
+  -- 在查看器中显示 AI 响应的最大行数。超过此长度的响应将被截断。
+  max_ai_response_lines = 20,
+
+  -- Separator string that AI can use to delineate core content from additional details.
+  -- 如果 AI 响应中包含此分隔符，它将在查看器中得到视觉增强。
+  core_content_separator = "---",
+
+  -- Automatically expand the selection to the nearest sentence boundary.
+  -- 自动将选择扩展到最近的句子边界。
+  auto_expand_to_sentence = true,
 }
 
 return CONFIGURATION

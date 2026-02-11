@@ -6,19 +6,11 @@ local AICompanionViewer = require("aicompanionviewer")
 local UIManager = require("ui/uimanager")
 local InfoMessage = require("ui/widget/infomessage")
 local Notification = require("ui/widget/notification")
+local Event = require("ui/event")
 
-local showAIDialog = require("dialogs")
-
-local queryAI = require("ai_query")
-
--- Helper function to normalize whitespace in AI responses
-local function normalize_whitespace(text)
-  if not text then return "" end
-  -- Replace tabs with spaces, then multiple spaces with a single space
-  text = text:gsub("\t", " "):gsub(" +", " ")
-  -- Trim leading/trailing whitespace
-  return text:match("^%s*(.-)%s*$")
-end
+local ConversationHandler = require("conversation_handler")
+local Utils = require("utils")
+local menu_cleaner = require("menu_cleaner") -- NEW: for custom menu cleanup
 
 local AIReadingAssistant = InputContainer:new {
   name = "aireadingassistant",
@@ -38,142 +30,116 @@ function AIReadingAssistant:init()
 
   self.ui.highlight:addToHighlightDialog("aireadingassistant_AI_Prompt1", function(_reader_highlight_instance)
     return {
-      text = CONFIGURATION and CONFIGURATION.menu_text1 or "AI概念解析",
+      text = CONFIGURATION and CONFIGURATION.menu_text1 or _("AI Prompt 1"),
       enabled = true,
       callback = function()
-        self:handlePrompt(1, _reader_highlight_instance)
+        local text = _reader_highlight_instance.selected_text.text
+        -- 使用 nextTick 确保 UI 响应
+        UIManager:nextTick(function()
+            self:handlePrompt(1, _reader_highlight_instance, text)
+        end)
       end,
     }
   end)
 
   self.ui.highlight:addToHighlightDialog("aireadingassistant_AI_Prompt2", function(_reader_highlight_instance)
     return {
-      text = CONFIGURATION and CONFIGURATION.menu_text2 or "AI翻译",
+      text = CONFIGURATION and CONFIGURATION.menu_text2 or _("AI Prompt 2"),
       enabled = true,
       callback = function()
-        self:handlePrompt(2, _reader_highlight_instance)
+        local text = _reader_highlight_instance.selected_text.text
+        UIManager:nextTick(function()
+            self:handlePrompt(2, _reader_highlight_instance, text)
+        end)
       end,
     }
   end)
 
   self.ui.highlight:addToHighlightDialog("aireadingassistant_AI_Prompt3", function(_reader_highlight_instance)
     return {
-      text = CONFIGURATION and CONFIGURATION.menu_text3 or "AI知识扩展",
+      text = CONFIGURATION and CONFIGURATION.menu_text3 or _("AI Prompt 3"),
       enabled = true,
       callback = function()
-        self:handlePrompt(3, _reader_highlight_instance)
-      end,
-    }
-  end)
-
-  self.ui.highlight:addToHighlightDialog("aireadingassistant_AI_Custom", function(_reader_highlight_instance)
-    return {
-      text = _("问 AI"),
-      enabled = true,
-      callback = function()
-        self:handleCustomPrompt(_reader_highlight_instance)
+        local text = _reader_highlight_instance.selected_text.text
+        UIManager:nextTick(function()
+            self:handlePrompt(3, _reader_highlight_instance, text)
+        end)
       end,
     }
   end)
 end
 
-function AIReadingAssistant:handleCustomPrompt(_reader_highlight_instance)
+function AIReadingAssistant:handlePrompt(prompt_number, _reader_highlight_instance, captured_text)
+  local highlightedText = captured_text or (_reader_highlight_instance.selected_text and _reader_highlight_instance.selected_text.text) or ""
+  
+  local success, result = pcall(function() return require("configuration") end)
+  local CONFIGURATION
+  if success then
+    CONFIGURATION = result
+  end
+
+  if CONFIGURATION and CONFIGURATION.auto_expand_to_sentence then
+    local success_ctx, prev, next_ctx = pcall(function()
+      return _reader_highlight_instance:getSelectedWordContext(50)
+    end)
+    if success_ctx then
+      highlightedText = Utils.expand_to_sentence(highlightedText, prev, next_ctx)
+    end
+  end
+
+  -- 之前尝试在这里立即清除选区（即使延迟0.5秒）也会导致 KOReader 崩溃
+  -- 原因可能是清除选区会销毁底层对象，而该对象在后续流程中仍被引用
+  -- 或者与菜单的关闭事件存在冲突。
+  -- 因此，为了稳定性，我们回退到“在对话框关闭后才清除选区”的策略。
+  -- 选区的清除工作将由 ConversationHandler 在关闭 AI 窗口时的回调中执行。
+  
+  if _reader_highlight_instance and _reader_highlight_instance.onClose then
+    _reader_highlight_instance:onClose()
+  end
+
   NetworkMgr:runWhenOnline(function()
     if not updateMessageShown then
-      -- UpdateChecker.checkForUpdates()
-      updateMessageShown = true
-    end
-    showAIDialog(self.ui, _reader_highlight_instance.selected_text.text)
-  end)
-end
-
-function AIReadingAssistant:handlePrompt(prompt_number, _reader_highlight_instance)
-  NetworkMgr:runWhenOnline(function()
-    if not updateMessageShown then
-      -- UpdateChecker.checkForUpdates()
       updateMessageShown = true
     end
 
-    local success, result = pcall(function() return require("configuration") end)
-    local CONFIGURATION
-    if success then
-      CONFIGURATION = result
-    else
-      print("configuration.lua not found, using default system prompts")
-    end
-    local system_prompt
-    if prompt_number == 1 then
-      system_prompt = (CONFIGURATION and CONFIGURATION.prompt1 or "The following is a conversation with an AI assistant. The assistant is helpful, creative, clever, and very friendly. Answer as concisely as possible.") .. "\n\n请返回纯文本，不要包含markdown格式符号"
-    elseif prompt_number == 2 then
-      system_prompt = (CONFIGURATION and CONFIGURATION.prompt2 or "The following is a conversation with an AI assistant. The assistant is helpful, creative, clever, and very friendly. Answer as concisely as possible.") .. "\n\n请返回纯文本，不要包含markdown格式符号"
-    elseif prompt_number == 3 then
-      system_prompt = (CONFIGURATION and CONFIGURATION.prompt3 or "The following is a conversation with an AI assistant. The assistant is helpful, creative, clever, and very friendly. Answer as concisely as possible.") .. "\n\n请返回纯文本，不要包含markdown格式符号"
-    end
+    local default_prompt = "The following is a conversation with an AI assistant. The assistant is helpful, creative, clever, and very friendly. Answer as concisely as possible."
+    local prompt_key = "prompt" .. prompt_number
+    local system_prompt = (CONFIGURATION and CONFIGURATION[prompt_key] or default_prompt) .. "\n\n请返回纯文本，不要包含markdown格式符号"
 
-    local highlightedText = _reader_highlight_instance.selected_text.text
     local message_history = {
       { role = "system", content = system_prompt },
       { role = "user", content = highlightedText }
     }
 
-    local answer, error_msg
-    success, error_msg = pcall(function()
-      return queryAI(message_history)
-    end)
+    ConversationHandler.start(_("AI阅读助手"), message_history, _reader_highlight_instance, nil, self.ui, UIManager)
+  end)
+end
 
-    if success and error_msg then
-      answer = normalize_whitespace(error_msg)
-      table.insert(message_history, { role = "assistant", content = answer })
-
-      local result_text = ""
-      for i = 1, #message_history do
-        if message_history[i].role == "user" then
-          result_text = result_text .. _("原文: ") .. message_history[i].content .. "\n\n"
-        elseif message_history[i].role == "assistant" then
-          result_text = result_text .. _("AI助手: ") .. message_history[i].content .. "\n\n"
-        end
-      end
-
-      local aicompanion_viewer = AICompanionViewer:new{
-        title = _("AI阅读助手"),
-        text = result_text,
-        reader_highlight_instance = _reader_highlight_instance,
-        latest_response = answer,  -- Pass the latest AI response
-        onAskQuestion = function(aicompanion_viewer, question)
-          table.insert(message_history, { role = "user", content = question })
-
-          local followup_answer, followup_error
-          local followup_success, followup_result = pcall(function()
-            return queryAI(message_history)
-          end)
-
-          if followup_success and followup_result then
-            followup_answer = normalize_whitespace(followup_result)
-            table.insert(message_history, { role = "assistant", content = followup_answer })
-
-            local result_text = ""
-            for i = 1, #message_history do
-              if message_history[i].role == "user" then
-                result_text = result_text .. _("原文: ") .. message_history[i].content .. "\n\n"
-              elseif message_history[i].role == "assistant" then
-                result_text = result_text .. _("AI: ") .. message_history[i].content .. "\n\n"
-              end
+function AIReadingAssistant:onDictButtonsReady(dict_popup, buttons)
+    table.insert(buttons, 1, {{
+        id = "ai_reading_assistant_dictionary",
+        text = _("AI 词典"),
+        callback = function()
+            local word = dict_popup.word
+            local highlight = dict_popup.highlight
+            
+            -- 这个逻辑之前已经确认成功
+            if dict_popup.onClose then
+                dict_popup:onClose()
+            else
+                UIManager:close(dict_popup)
+            end
+            
+            if self.ui and self.ui.onClearSelection then
+                self.ui:onClearSelection()
             end
 
-            aicompanion_viewer:update(result_text, followup_answer)  -- Pass the latest response when updating
-          else
-            local error_text = followup_result and tostring(followup_result) or "发生未知错误"
-            UIManager:show(InfoMessage:new{ text = _("AI 查询出错: " .. error_text), timeout = 5 })
-          end
-        end
-      }
-
-      UIManager:show(aicompanion_viewer)
-    else
-      local error_text = error_msg and tostring(error_msg) or "发生未知错误"
-      UIManager:show(InfoMessage:new{ text = _("AI 查询出错: " .. error_text), timeout = 5 })
-    end
-  end)
+            NetworkMgr:runWhenOnline(function()
+                local showAIDictionary = require("ai_dictionary")
+                showAIDictionary(self.ui, word, highlight)
+            end)
+        end,
+    }})
 end
 
 return AIReadingAssistant
