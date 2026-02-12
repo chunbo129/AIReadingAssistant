@@ -93,10 +93,6 @@ function AIReadingAssistant:handlePrompt(prompt_number, _reader_highlight_instan
   -- 因此，为了稳定性，我们回退到“在对话框关闭后才清除选区”的策略。
   -- 选区的清除工作将由 ConversationHandler 在关闭 AI 窗口时的回调中执行。
   
-  if _reader_highlight_instance and _reader_highlight_instance.onClose then
-    _reader_highlight_instance:onClose()
-  end
-
   NetworkMgr:runWhenOnline(function()
     if not updateMessageShown then
       updateMessageShown = true
@@ -111,7 +107,15 @@ function AIReadingAssistant:handlePrompt(prompt_number, _reader_highlight_instan
       { role = "user", content = highlightedText }
     }
 
-    ConversationHandler.start(_("AI阅读助手"), message_history, _reader_highlight_instance, nil, self.ui, UIManager)
+    ConversationHandler.start(_("AI阅读助手"), message_history, _reader_highlight_instance, {
+      onClose = function()
+        if _reader_highlight_instance and _reader_highlight_instance.onClose then
+          pcall(function()
+            _reader_highlight_instance:onClose()
+          end)
+        end
+      end
+    }, self.ui, UIManager)
   end)
 end
 

@@ -21,6 +21,7 @@ local FrameContainer = require("ui/widget/container/framecontainer")
 local GestureRange = require("ui/gesturerange")
 local InputContainer = require("ui/widget/container/inputcontainer")
 local InputDialog = require("ui/widget/inputdialog")
+local InfoMessage = require("ui/widget/infomessage")
 local MovableContainer = require("ui/widget/container/movablecontainer")
 local Notification = require("ui/widget/notification")
 local ScrollTextWidget = require("ui/widget/scrolltextwidget")
@@ -42,6 +43,7 @@ local AICompanionViewer = FocusManager:extend {
   buttons_table = nil,
   reader_highlight_instance = nil,  -- Added to store the highlight instance
   latest_response = nil,  -- Store the latest AI response
+  disable_save_note = nil,
   covers_fullscreen = true,
   -- See TextBoxWidget for details about these options
   -- We default to justified and auto_para_direction to adapt
@@ -194,51 +196,59 @@ function AICompanionViewer:init()
   end
 
   -- buttons
-  local default_buttons =
-  {
-    {
+  local default_buttons = {}
+  if not self.disable_save_note then
+    table.insert(default_buttons, {
       text = _("保存为笔记"),
       id = "save_as_note",
       callback = function()
-        if self.reader_highlight_instance and self.latest_response then
-          self.reader_highlight_instance:addNote(self.latest_response)
-          self:onClose()  -- Close the viewer after saving the note
+        if self.reader_highlight_instance and self.latest_response and self.reader_highlight_instance.addNote then
+          local ok, err = pcall(function()
+            self.reader_highlight_instance:addNote(self.latest_response)
+          end)
+          if ok then
+            self:onClose()
+          else
+            UIManager:show(InfoMessage:new{ text = _("保存笔记失败: ") .. tostring(err), timeout = 5 })
+          end
+        else
+          UIManager:show(InfoMessage:new{ text = _("保存笔记失败: 选区已失效"), timeout = 5 })
         end
       end,
-    },
-    {
-      text = _("追问"),
-      id = "ask_another_question",
-      callback = function()
-        self:askAnotherQuestion()
-      end,
-    },
-    {
-      text = "⇱",
-      id = "top",
-      callback = function()
-        self.scroll_text_w:scrollToTop()
-      end,
-      hold_callback = self.default_hold_callback,
-      allow_hold_when_disabled = true,
-    },
-    {
-      text = "⇲",
-      id = "bottom",
-      callback = function()
-        self.scroll_text_w:scrollToBottom()
-      end,
-      hold_callback = self.default_hold_callback,
-      allow_hold_when_disabled = true,
-    },
-    {
-      text = _("关闭"),
-      callback = function()
-        self:onClose()
-      end,
-      hold_callback = self.default_hold_callback,
-    },
-  }
+    })
+  end
+  table.insert(default_buttons, {
+    text = _("追问"),
+    id = "ask_another_question",
+    callback = function()
+      self:askAnotherQuestion()
+    end,
+  })
+  table.insert(default_buttons, {
+    text = "⇱",
+    id = "top",
+    callback = function()
+      self.scroll_text_w:scrollToTop()
+    end,
+    hold_callback = self.default_hold_callback,
+    allow_hold_when_disabled = true,
+  })
+  table.insert(default_buttons, {
+    text = "⇲",
+    id = "bottom",
+    callback = function()
+      self.scroll_text_w:scrollToBottom()
+    end,
+    hold_callback = self.default_hold_callback,
+    allow_hold_when_disabled = true,
+  })
+  table.insert(default_buttons, {
+    text = _("关闭"),
+    callback = function()
+      self:onClose()
+    end,
+    hold_callback = self.default_hold_callback,
+  })
   local buttons = self.buttons_table or {}
   if self.add_default_buttons or not self.buttons_table then
     table.insert(buttons, default_buttons)
@@ -479,6 +489,7 @@ function AICompanionViewer:update(new_text, new_response)
     close_callback = self.close_callback,
     reader_highlight_instance = self.reader_highlight_instance,  -- Preserve the highlight instance
     latest_response = new_response or self.latest_response,  -- Use new response if provided
+    disable_save_note = self.disable_save_note,
   }
   updated_viewer.scroll_text_w:scrollToBottom()
   UIManager:show(updated_viewer)

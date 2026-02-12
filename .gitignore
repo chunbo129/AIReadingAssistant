@@ -9,3 +9,4 @@ aireadingassistant.koplugin/configuration.lua
 .env
 *.log
 .DS_Store
+*.zip

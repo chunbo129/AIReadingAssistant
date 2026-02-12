@@ -27,7 +27,7 @@ local function showAIDictionary(ui, word, highlight_instance)
     { role = "user", content = user_content }
   }
 
-  ConversationHandler.start(_("AI 词典"), message_history, highlight_instance)
+  ConversationHandler.start(_("AI 词典"), message_history, highlight_instance, { disable_save_note = true })
 end
 
 return showAIDictionary

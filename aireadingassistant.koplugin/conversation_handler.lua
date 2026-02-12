@@ -61,6 +61,7 @@ function ConversationHandler.start(title, initial_messages, highlight_instance, 
              text = result_text,
              reader_highlight_instance = highlight_instance,
              latest_response = answer_display,
+             disable_save_note = callbacks.disable_save_note,
              onAskQuestion = onAsk,
             close_callback = function() 
                 HistoryManager:saveConversation(message_history)
