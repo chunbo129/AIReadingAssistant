@@ -1,42 +1,66 @@
 local CONFIGURATION = {
-  -- Replace with your actual API key
-  -- 在此处填入您的 API 密钥
-  api_key = "your_api_key_here",
+  -- Active settings
+  current_provider = "DeepSeek (官方)",
 
-  -- Replace with your choice of model
-  -- 在此处填入您选择的模型
-  -- 常用模型示例: "gpt-4o", "deepseek-chat", "doubao-pro-4k"
-  model = "gpt-4o",
+  -- Keys mapping for each provider
+  -- 电脑连接设备后，可在下方直接用文本编辑器填入各平台的 API 密钥 (Key)
+  provider_keys = {
+    ["DeepSeek (官方)"] = "在此填入您的 DeepSeek API 密钥",
+    ["硅基流动 (SiliconFlow)"] = "在此填入您的硅基流动 API 密钥",
+    ["火山引擎 (火山方舟)"] = "在此填入您的火山引擎 API 密钥",
+    ["通义千问 (阿里 DashScope)"] = "在此填入您的阿里通义千问 API 密钥",
+    ["智谱 AI (GLM)"] = "在此填入您的智谱 GLM API 密钥",
+    ["自定义"] = "在此填入您的自定义服务商 API 密钥"
+  },
 
-  -- API endpoint for the large language model
-  -- 大语言模型的 API 接入点
-  -- Common endpoints / 常用接入点:
-  --   - OpenAI: https://api.openai.com/v1/chat/completions
-  --   - DeepSeek: https://api.deepseek.com/chat/completions
-  --   - VolcEngine (火山引擎/豆包): https://ark.cn-beijing.volces.com/api/v3/chat/completions
-  --   - Alibaba (通义千问): https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions
-  api_endpoint = "https://api.openai.com/v1/chat/completions",
+  -- Currently selected model for each provider
+  provider_models = {
+    ["DeepSeek (官方)"] = "deepseek-v4-flash",
+    ["硅基流动 (SiliconFlow)"] = "deepseek-ai/DeepSeek-V4-Flash",
+    ["火山引擎 (火山方舟)"] = "doubao-seed-2-0-mini-260215",
+    ["通义千问 (阿里 DashScope)"] = "qwen-turbo",
+    ["智谱 AI (GLM)"] = "glm-4-flash",
+    ["自定义"] = "custom-model"
+  },
 
-  -- Default system prompt used when asking the large language model a question
-  -- 向大语言模型提问时使用的默认系统提示
-  prompt1 = "你是一名博学的百科全书式阅读助手。请对选中的名词、概念、人物、事件或专业术语进行深度解析：1. 【概念定义】：用通俗易懂的语言解释该概念的核心含义。2. 【背景延伸】：补充相关的历史背景、专业知识、文化典故或发展脉络。3. 【价值意义】：简述该概念在相关领域的重要性或现实意义。请返回不超过400字的纯文本，不要使用markdown格式（如**等）。",
-  -- 每个提示在快捷菜单中显示的文本
-  menu_text1 = "概念解析",
+  -- Custom endpoint address (used when provider is "自定义")
+  custom_endpoint = "https://api.openai.com/v1/chat/completions",
 
-  -- 下面是第二个菜单的配置（例如：翻译）
-  prompt2 = "你是一名资深的翻译家和语言专家。请执行以下任务：1. 【精准翻译】：将句子翻译成自然、流畅、优美的中文（信达雅）。2. 【重点词汇】：提取句中的核心词汇或短语，并附带简明释义。3. 【难点解析】：如果句子结构复杂，请简要分析其句子结构或语法难点。请返回纯文本，不要使用markdown格式。",
-  menu_text2 = "句子翻译",
+  -- Legacy settings (Fallback support)
+  api_key = "",
+  model = "doubao-seed-2-0-mini-260215",
+  api_endpoint = "https://ark.cn-beijing.volces.com/api/v3/chat/completions",
 
-  -- 下面是第三个菜单的配置（例如：语法分析）
-  prompt3 = "你是一名资深的语法学家。请对该句子进行详尽的句法分析：1. 【句子结构】：拆解主谓宾、从句、修饰语等成分。2. 【核心语法】：指出句中运用的关键语法规则（如时态、语态、倒装、虚拟语气等）。3. 【知识点扩展】：对涉及的语法点进行简要的教学拓展。请用清晰的层级结构返回纯文本，不要使用markdown格式。",
-  menu_text3 = "语法解析",
+  -- Flat list of 5 Prompts
+  enabled1 = true,
+  menu_text1 = "学术概念解析",
+  prompt1 = "你是一名博学的学术专家与百科全书式伴读助手。请对选中的专业概念、名词术语、理论假说或人物事件进行深度解析：\n1. 【核心定义】：用简练通俗的语言解释其核心定义与学术定位。\n2. 【专业脉络】：详述其历史背景、关联理论、核心学派或演进过程。\n3. 【价值意义】：说明该名词在其专业领域的价值或现实意义。\n请返回不超过400字的纯文本，不要使用markdown格式。",
+
+  enabled2 = true,
+  menu_text2 = "英语句子翻译",
+  prompt2 = "你是一名精通双语的资深翻译家与语言专家。请对选中的英文文本执行以下任务：\n1. 【精准翻译】：将该段英文翻译为流畅、自然、契合中文表达习惯的译文（信达雅）。\n2. 【核心词汇】：提取句中的重点生词、词组，并附带音标及简明中文释义。\n3. 【难点剖析】：如果句子结构复杂，请简要分析其主干句型、从句或特殊语法现象。\n请返回纯文本，不要使用markdown格式。",
+
+  enabled3 = true,
+  menu_text3 = "英语语法解析",
+  prompt3 = "你是一名资深的语法学家。请对该句子进行详尽的句法分析：\n1. 【句子结构】：拆解主谓宾、从句、修饰语等成分。\n2. 【核心语法】：指出句中运用的关键语法规则（如时态、语态、倒装、虚拟语气等）。\n3. 【知识点拓展】：对涉及的语法点进行简要的教学拓展。\n请用清晰的层级结构返回纯文本，不要使用markdown格式。",
+
+  enabled4 = true,
+  menu_text4 = "通用语境赏析",
+  prompt4 = "你是一名博闻强识的阅读向导与文学评论家。请对选中的书籍文字执行以下分析：\n1. 【语境解析】：结合书籍的上下文，深度解读这段文字在情节、逻辑或论点中的承载与承接作用。\n2. 【文学赏析】：剖析其中蕴含的修辞手法、文学隐喻、人物心理、时代背景或叙事艺术。\n3. 【思考延伸】：提出一个与此相关的启发性思考或关联知识点。\n请返回纯文本，不要使用markdown格式。",
+
+  enabled5 = false,
+  menu_text5 = "自定义助手",
+  prompt5 = "你是一名得力的 AI 伴读助手。请根据我选中的文本提供有用的解读和答复。请返回纯文本，不要使用markdown格式。",
 
   -- Maximum number of lines to display for AI responses in the viewer.
   -- Responses longer than this will be truncated. Set to 0 or nil for no limit.
-  -- 在查看器中显示 AI 响应的最大行数。超过此长度的响应将被截断。
+  -- 在查看器中显示 AI 响应的最大行数。
+  -- 超过此长度的响应将被截断。设置为 0 或 nil 表示不限制。
   max_ai_response_lines = 20,
 
   -- Separator string that AI can use to delineate core content from additional details.
+  -- If present in AI's response, it will be visually enhanced in the viewer.
+  -- AI 可以用来区分核心内容和额外细节的分隔符字符串。
   -- 如果 AI 响应中包含此分隔符，它将在查看器中得到视觉增强。
   core_content_separator = "---",
 
@@ -45,4 +69,14 @@ local CONFIGURATION = {
   auto_expand_to_sentence = true,
 }
 
-return CONFIGURATION
+local settings_storage = require("settings_storage")
+local current_config = settings_storage.load(CONFIGURATION)
+
+function current_config:update(updates)
+  for k, v in pairs(updates) do
+    self[k] = v
+  end
+  settings_storage.save(self)
+end
+
+return current_config

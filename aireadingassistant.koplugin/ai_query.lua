@@ -22,6 +22,7 @@ local https = require("ssl.https")
 local http = require("socket.http")
 local ltn12 = require("ltn12")
 local json = require("json")
+local PRESETS = require("presets")
 
 local function isGeminiEndpoint(url)
   return url:match("generativelanguage%.googleapis%.com") ~= nil
@@ -82,10 +83,34 @@ local function parseOpenAIResponse(response)
 end
 
 local function queryAI(message_history)
-  -- Use api_key from CONFIGURATION or fallback to the api_key module
-  local api_key_value = CONFIGURATION and CONFIGURATION.api_key or api_key
-  local api_url = CONFIGURATION and CONFIGURATION.api_endpoint or "https://api.openai.com/v1/chat/completions"
-  local model = CONFIGURATION and CONFIGURATION.model or "gpt-4-mini"
+  local provider = CONFIGURATION and CONFIGURATION.current_provider or "DeepSeek (官方)"
+
+  -- Determine API endpoint url
+  local api_url = ""
+  if provider == "自定义" then
+    api_url = CONFIGURATION and CONFIGURATION.custom_endpoint or "https://api.openai.com/v1/chat/completions"
+  else
+    for _, preset in ipairs(PRESETS) do
+      if preset.name == provider then
+        api_url = preset.api_endpoint
+        break
+      end
+    end
+  end
+
+  local api_key_value = CONFIGURATION and CONFIGURATION.provider_keys and CONFIGURATION.provider_keys[provider] or ""
+  local model = CONFIGURATION and CONFIGURATION.provider_models and CONFIGURATION.provider_models[provider] or "deepseek-v4-flash"
+
+  -- Fallbacks for backward compatibility
+  if api_key_value == "" and CONFIGURATION and CONFIGURATION.api_key then
+    api_key_value = CONFIGURATION.api_key
+  end
+  if model == "custom-model" and CONFIGURATION and CONFIGURATION.model then
+    model = CONFIGURATION.model
+  end
+  if provider == "自定义" and (api_url == "" or api_url == "https://api.openai.com/v1/chat/completions") and CONFIGURATION and CONFIGURATION.api_endpoint then
+    api_url = CONFIGURATION.api_endpoint
+  end
 
   -- Determine whether to use http or https
   local request_library = api_url:match("^https://") and https or http

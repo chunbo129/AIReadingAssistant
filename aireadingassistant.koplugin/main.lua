@@ -28,57 +28,45 @@ function AIReadingAssistant:init()
     print("configuration.lua not found, using default menu text")
   end
 
-  self.ui.highlight:addToHighlightDialog("aireadingassistant_AI_Prompt1", function(_reader_highlight_instance)
-    return {
-      text = CONFIGURATION and CONFIGURATION.menu_text1 or _("AI Prompt 1"),
-      enabled = true,
-      callback = function()
-        local text = _reader_highlight_instance.selected_text.text
-        -- 使用 nextTick 确保 UI 响应
-        UIManager:nextTick(function()
-            self:handlePrompt(1, _reader_highlight_instance, text)
-        end)
-      end,
-    }
-  end)
-
-  self.ui.highlight:addToHighlightDialog("aireadingassistant_AI_Prompt2", function(_reader_highlight_instance)
-    return {
-      text = CONFIGURATION and CONFIGURATION.menu_text2 or _("AI Prompt 2"),
-      enabled = true,
-      callback = function()
-        local text = _reader_highlight_instance.selected_text.text
-        UIManager:nextTick(function()
-            self:handlePrompt(2, _reader_highlight_instance, text)
-        end)
-      end,
-    }
-  end)
-
-  self.ui.highlight:addToHighlightDialog("aireadingassistant_AI_Prompt3", function(_reader_highlight_instance)
-    return {
-      text = CONFIGURATION and CONFIGURATION.menu_text3 or _("AI Prompt 3"),
-      enabled = true,
-      callback = function()
-        local text = _reader_highlight_instance.selected_text.text
-        UIManager:nextTick(function()
-            self:handlePrompt(3, _reader_highlight_instance, text)
-        end)
-      end,
-    }
-  end)
-end
-
-function AIReadingAssistant:handlePrompt(prompt_number, _reader_highlight_instance, captured_text)
-  local highlightedText = captured_text or (_reader_highlight_instance.selected_text and _reader_highlight_instance.selected_text.text) or ""
-  
-  local success, result = pcall(function() return require("configuration") end)
-  local CONFIGURATION
-  if success then
-    CONFIGURATION = result
+  if self.ui and self.ui.menu then
+    self.ui.menu:registerToMainMenu(self)
   end
 
-  if CONFIGURATION and CONFIGURATION.auto_expand_to_sentence then
+  -- 动态生成并绑定最多 5 个菜单项槽
+  for i = 1, 5 do
+    local key = "aireadingassistant_AI_Prompt" .. i
+    self.ui.highlight:addToHighlightDialog(key, function(_reader_highlight_instance)
+      local enabled_key = "enabled" .. i
+      local text_key = "menu_text" .. i
+      local prompt_key = "prompt" .. i
+
+      return {
+        text = CONFIGURATION and CONFIGURATION[text_key] or ("AI Prompt " .. i),
+        enabled = true,
+        show_in_highlight_dialog_func = function()
+          if CONFIGURATION and CONFIGURATION[enabled_key] == false then
+            return false
+          end
+          return true
+        end,
+        callback = function()
+          local text = _reader_highlight_instance.selected_text.text
+          -- 使用 nextTick 确保 UI 响应
+          UIManager:nextTick(function()
+              self:handlePrompt(CONFIGURATION and CONFIGURATION[prompt_key], _reader_highlight_instance, text)
+          end)
+        end,
+      }
+    end)
+  end
+end
+
+function AIReadingAssistant:handlePrompt(system_prompt_override, _reader_highlight_instance, captured_text)
+  local highlightedText = captured_text or (_reader_highlight_instance.selected_text and _reader_highlight_instance.selected_text.text) or ""
+  
+  local success, CONFIGURATION = pcall(function() return require("configuration") end)
+
+  if success and CONFIGURATION and CONFIGURATION.auto_expand_to_sentence then
     local success_ctx, prev, next_ctx = pcall(function()
       return _reader_highlight_instance:getSelectedWordContext(50)
     end)
@@ -87,20 +75,12 @@ function AIReadingAssistant:handlePrompt(prompt_number, _reader_highlight_instan
     end
   end
 
-  -- 之前尝试在这里立即清除选区（即使延迟0.5秒）也会导致 KOReader 崩溃
-  -- 原因可能是清除选区会销毁底层对象，而该对象在后续流程中仍被引用
-  -- 或者与菜单的关闭事件存在冲突。
-  -- 因此，为了稳定性，我们回退到“在对话框关闭后才清除选区”的策略。
-  -- 选区的清除工作将由 ConversationHandler 在关闭 AI 窗口时的回调中执行。
-  
   NetworkMgr:runWhenOnline(function()
     if not updateMessageShown then
       updateMessageShown = true
     end
 
-    local default_prompt = "The following is a conversation with an AI assistant. The assistant is helpful, creative, clever, and very friendly. Answer as concisely as possible."
-    local prompt_key = "prompt" .. prompt_number
-    local system_prompt = (CONFIGURATION and CONFIGURATION[prompt_key] or default_prompt) .. "\n\n请返回纯文本，不要包含markdown格式符号"
+    local system_prompt = (system_prompt_override or "") .. "\n\n请返回纯文本，不要包含markdown格式符号"
 
     local message_history = {
       { role = "system", content = system_prompt },
@@ -144,6 +124,14 @@ function AIReadingAssistant:onDictButtonsReady(dict_popup, buttons)
             end)
         end,
     }})
+end
+
+function AIReadingAssistant:addToMainMenu(menu_items)
+    local CONFIGURATION = require("configuration")
+    local SettingsMenu = require("settings_menu")
+    local menu = SettingsMenu.getMenu(CONFIGURATION)
+    menu.sorting_hint = "more_tools"
+    menu_items.aireadingassistant = menu
 end
 
 return AIReadingAssistant

@@ -22,6 +22,24 @@ function ConversationHandler.start(title, initial_messages, highlight_instance, 
     local message_history = initial_messages
     local _UIManager = UIManagerInstance or UIManager
 
+    -- 校验当前服务商的 API Key 是否已配置
+    local provider = CONFIGURATION and CONFIGURATION.current_provider or "DeepSeek (官方)"
+    local api_key_value = CONFIGURATION and CONFIGURATION.provider_keys and CONFIGURATION.provider_keys[provider] or ""
+    if api_key_value == "" and CONFIGURATION and CONFIGURATION.api_key then
+        api_key_value = CONFIGURATION.api_key
+    end
+    if not api_key_value or api_key_value == "" or (type(api_key_value) == "string" and api_key_value:find("在此填入")) then
+        _UIManager:show(InfoMessage:new{ text = _("请先在设置中配置您的 ") .. provider .. _(" API 密钥 (API Key)！"), timeout = 5 })
+        _UIManager:scheduleIn(0.2, function()
+            if ui and ui.onClearSelection then
+                ui:onClearSelection()
+            end
+            _UIManager:broadcastEvent(Event:new("ClearSelection"))
+            if callbacks.onClose then callbacks.onClose() end
+        end)
+        return
+    end
+
     local function truncate_response(text)
         if CONFIGURATION.max_ai_response_lines and CONFIGURATION.max_ai_response_lines > 0 then
             local lines = {}
@@ -44,17 +62,23 @@ function ConversationHandler.start(title, initial_messages, highlight_instance, 
          local result_text = Utils.createResultText(message_history)
          
          local viewer
-         local function onAsk(v, question)
+          local function onAsk(v, question)
              table.insert(message_history, { role = "user", content = question })
-             local success, res = pcall(function() return queryAI(message_history) end)
-             if success and res then
-                 local ans = Utils.normalize_whitespace(res)
-                 table.insert(message_history, { role = "assistant", content = res })
-                 v:update(Utils.createResultText(message_history), truncate_response(ans))
-             else
-                 UIManager:show(InfoMessage:new{ text = _("Error: ") .. tostring(res), timeout = 5 })
-             end
-         end
+             local follow_up_waiting = InfoMessage:new{ text = _("AI 正在思考，请稍候...") }
+             _UIManager:show(follow_up_waiting)
+             
+             _UIManager:nextTick(function()
+                 local success, res = pcall(function() return queryAI(message_history) end)
+                 _UIManager:close(follow_up_waiting)
+                 if success and res then
+                     local ans = Utils.normalize_whitespace(res)
+                     table.insert(message_history, { role = "assistant", content = res })
+                     v:update(Utils.createResultText(message_history), truncate_response(ans))
+                 else
+                     _UIManager:show(InfoMessage:new{ text = _("Error: ") .. tostring(res), timeout = 5 })
+                 end
+             end)
+          end
          
          viewer = AICompanionViewer:new{
              title = title,
@@ -77,14 +101,19 @@ function ConversationHandler.start(title, initial_messages, highlight_instance, 
          UIManager:show(viewer)
     end
 
-    -- 阻塞查询前，确保没有任何 Dialog 还在 UI 栈中
-    local success, result = pcall(function() return queryAI(initial_messages) end)
-    if success and result then
-        handleResponse(result)
-    else
-        UIManager:show(InfoMessage:new{ text = _("AI Error: ") .. tostring(result), timeout = 5 })
-        UIManager:broadcastEvent(Event:new("ClearSelection"))
-    end
+    local waiting_dialog = InfoMessage:new{ text = _("正在连接 AI 助手，请稍候...") }
+    _UIManager:show(waiting_dialog)
+
+    _UIManager:nextTick(function()
+        local success, result = pcall(function() return queryAI(initial_messages) end)
+        _UIManager:close(waiting_dialog)
+        if success and result then
+            handleResponse(result)
+        else
+            _UIManager:show(InfoMessage:new{ text = _("AI Error: ") .. tostring(result), timeout = 5 })
+            _UIManager:broadcastEvent(Event:new("ClearSelection"))
+        end
+    end)
 end
 
 return ConversationHandler
